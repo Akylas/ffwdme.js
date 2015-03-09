@@ -16,8 +16,9 @@ var Base = Class.extend({
   constructor: function(options) {
     this.options = options;
 
-    var attrs = ['start', 'dest', 'rerouting'], attr;
-    for(var i = 0, len = attrs.length; i < len; i++) {
+    var attrs = ['start', 'dest', 'rerouting'],
+      attr;
+    for (var i = 0, len = attrs.length; i < len; i++) {
       attr = attrs[i];
       this[attr] = options && options[attr];
     }
@@ -42,6 +43,18 @@ var Base = Class.extend({
 
   eventPrefix: function() {
     return this.rerouting ? 'reroutecalculation' : 'routecalculation';
+  },
+
+  queryString: function(params, _start) {
+    var first = true;
+    return _.reduce(params, function(memo, value, key) {
+      if ((!_.isNumber(value) && _.isEmpty(value)) || _.isFunction(value)) return memo;
+      if (first) {
+        first = false;
+        return memo + (_start ? '?' : '') + key + '=' + (_.isObject(value) ? stringify(value) :
+          value);
+      } else return memo + '&' + key + '=' + (_.isObject(value) ? stringify(value) : value);
+    }, _start || '');
   },
 
   success: function(response, route) {

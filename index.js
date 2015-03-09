@@ -4,7 +4,9 @@ var Navigation = require('./navigation');
 var Route = require('./route');
 var NavigationInfo = require('./navigation_info');
 var RoutingBase = require('./routing/base');
-var RoutingGraphHopper = require('./routing/graph_hopper');
+var RoutingGoogle = require('./routing/google');
+var RoutingMapQuest = require('./routing/mapquest');
+var RoutingGraphHopper= require('./routing/graph_hopper');
 var UtilsGeo = require('./utils/geo');
 
 (function(global, undefined) {
@@ -22,7 +24,9 @@ var UtilsGeo = require('./utils/geo');
 
     routing: {
       Base: RoutingBase,
-      GraphHopper: RoutingGraphHopper
+      Google: RoutingGoogle,
+      GraphHopper: RoutingGraphHopper,
+      MapQuest: RoutingMapQuest
     },
 
     utils: {
