@@ -111,13 +111,13 @@ var Navigation = Class.extend({
     options || (options = {});
 
     var directions = this.route.directions,
-    lastDirection = directions[directions.length-1],
-    destLat = lastDirection.path ? lastDirection.path[lastDirection.path.length - 1].lat : lastDirection.start.lat,
-    destLng = lastDirection.path ? lastDirection.path[lastDirection.path.length - 1].lng : lastDirection.start.lng;
+      lastDirection = directions[directions.length - 1],
+      destLat = lastDirection.path ? lastDirection.path[lastDirection.path.length - 1][0] : lastDirection.start[0],
+      destLng = lastDirection.path ? lastDirection.path[lastDirection.path.length - 1][1] : lastDirection.start[1];
 
     ffwdme.on('reroutecalculation:success', this.rerouteCallback);
 
-    options.dest = new ffwdme.LatLng(destLat, destLng);
+    options.dest = [destLat, destLng];
     options.rerouting = true;
 
     var route = new ffwdme.routingService(options).fetch();

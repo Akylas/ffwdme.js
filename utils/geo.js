@@ -15,10 +15,10 @@ module.exports =
    */
   distance: function (p1, p2) {
     // convert degrees to radians
-    var lat1 = p1.lat * this.DEG_TO_RAD_FACTOR;
-    var lat2 = p2.lat * this.DEG_TO_RAD_FACTOR;
+    var lat1 = p1[0] * this.DEG_TO_RAD_FACTOR;
+    var lat2 = p2[0] * this.DEG_TO_RAD_FACTOR;
     var a = Math.sin(lat1) * Math.sin(lat2) +
-        Math.cos(lat1) * Math.cos(lat2) * Math.cos((p2.lng - p1.lng) * this.DEG_TO_RAD_FACTOR);
+        Math.cos(lat1) * Math.cos(lat2) * Math.cos((p2[1] - p1[1]) * this.DEG_TO_RAD_FACTOR);
 
     return parseInt(this.EARTH_RADIUS * Math.acos(Math.min(a, 1)));
   },
@@ -29,7 +29,7 @@ module.exports =
    *
    */
   closestOnLine: function(s1, s2, p){
-    var x1 = s1.lat, y1 = s1.lng, x2 = s2.lat, y2 = s2.lng, px = p.lat, py = p.lng;
+    var x1 = s1[0], y1 = s1[1], x2 = s2[0], y2 = s2[1], px = p[0], py = p[1];
     var xDelta = x2 - x1;
     var yDelta = y2 - y1;
 
@@ -49,7 +49,7 @@ module.exports =
       closestPoint = [x1 + u * xDelta, y1 + u * yDelta];
     }
 
-    return (new ffwdme.LatLng(closestPoint[0], closestPoint[1]));
+    return closestPoint;
   }
 
 };

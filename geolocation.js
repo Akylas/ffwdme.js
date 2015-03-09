@@ -117,7 +117,7 @@ var Geolocation = Class.extend({
   positionUpdate: function(position) {
     var data = {
       geoposition: position,
-      point: new ffwdme.LatLng(position.coords.latitude, position.coords.longitude)
+      point: [position.coords.latitude, position.coords.longitude]
     };
 
     var first = false;
