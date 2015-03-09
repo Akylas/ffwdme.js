@@ -1,13 +1,11 @@
 var Class = require('./class');
 var Geolocation = require('./geolocation');
-var LatLng = require('./lat_lng');
 var Navigation = require('./navigation');
 var Route = require('./route');
 var NavigationInfo = require('./navigation_info');
 var RoutingBase = require('./routing/base');
 var RoutingGraphHopper = require('./routing/graph_hopper');
 var UtilsGeo = require('./utils/geo');
-var UtilsProxy = require('./utils/proxy');
 
 (function(global, undefined) {
   /**
@@ -17,7 +15,6 @@ var UtilsProxy = require('./utils/proxy');
   var ffwdme = {
     Class: Class,
     Geolocation: Geolocation,
-    LatLng: LatLng,
     Navigation: Navigation,
     NavigationInfo: NavigationInfo,
     Route: Route,
@@ -30,7 +27,6 @@ var UtilsProxy = require('./utils/proxy');
 
     utils: {
       Geo: UtilsGeo,
-      Proxy: UtilsProxy
     },
 
 
