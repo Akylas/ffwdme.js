@@ -225,4 +225,4 @@ var UtilsGeo = require('./utils/geo');
   // attach ffwdme to the global namespace
   global.ffwdme = ffwdme;
 
-})(typeof window !== 'undefined' ? window : global);
+})(typeof window !== 'undefined' ? window : this);
