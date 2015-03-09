@@ -3,35 +3,35 @@ var geoUtils = require('./utils/geo');
 
 var Navigation = Class.extend({
   /**
-     * Creates a new navigation handler.
-     *
-     * @class The route navigation will check if the
-     * geoposition of the device is still on the
-     * calculated route.
-     *
-     * @augments ffwdme.Class
-     * @constructs
-     */
+   * Creates a new navigation handler.
+   *
+   * @class The route navigation will check if the
+   * geoposition of the device is still on the
+   * calculated route.
+   *
+   * @augments ffwdme.Class
+   * @constructs
+   */
   constructor: function(options) {
     this.bindAll(this, 'getPositionOnRoute', 'rerouteCallback');
   },
 
   /**
-     * The route object to handle.
-     *
-     * @type Object
-     */
+   * The route object to handle.
+   *
+   * @type Object
+   */
   route: null,
 
   /**
-     * Holds an Array of the positions that could be
-     * mapped to the route.
-     *
-     * Basically these are HTML GeoPosition objects
-     * enriched with a _positionOnRoute hashtable.
-     *
-     * @type Array
-     */
+   * Holds an Array of the positions that could be
+   * mapped to the route.
+   *
+   * Basically these are HTML GeoPosition objects
+   * enriched with a _positionOnRoute hashtable.
+   *
+   * @type Array
+   */
   _lastPositionsOnRoute: [],
 
   _currentPositionOnRoute: null,
@@ -40,49 +40,53 @@ var Navigation = Class.extend({
 
   _lastDrivingDirectionIndex: null,
 
+  _eventId:0,
+  _events:{},
+  _currentEvents:{},
+
   startTime: null,
 
   startTimeByDirection: {},
 
   /**
-     * In case the position of the device can't
-     * be mapped on the route this counter holds the
-     * number of times it happened in a row.
-     *
-     * Will be resetted once the position can be mapped
-     * again on the route.
-     *
-     * @type Integer
-     */
+   * In case the position of the device can't
+   * be mapped on the route this counter holds the
+   * number of times it happened in a row.
+   *
+   * Will be resetted once the position can be mapped
+   * again on the route.
+   *
+   * @type Integer
+   */
   offRouteCounter: 0,
 
   /**
-     * In case the position of the device can't
-     * be mapped on the route this timestamp saves
-     * the first time this occured.
-     *
-     * Will be resetted once the position can be mapped
-     * again on the route.
-     *
-     * @type Integer
-     */
+   * In case the position of the device can't
+   * be mapped on the route this timestamp saves
+   * the first time this occured.
+   *
+   * Will be resetted once the position can be mapped
+   * again on the route.
+   *
+   * @type Integer
+   */
   offRouteStartTimestamp: 0,
 
   // debug only
   routePointCounter: 0,
 
   /**
-     * Time in ms that the position could not be
-     * mapped to the route.
-     *
-     * Will be resetted once the position can be mapped
-     * again on the route.
-     *
-     * @type Integer
-     */
+   * Time in ms that the position could not be
+   * mapped to the route.
+   *
+   * Will be resetted once the position can be mapped
+   * again on the route.
+   *
+   * @type Integer
+   */
   offRouteTime: 0,
 
-  reset: function(){
+  reset: function() {
     this._lastPositionsOnRoute = [];
     this._currentPositionOnRoute = null;
     this._lastDirectionPathIndex = null;
@@ -90,22 +94,24 @@ var Navigation = Class.extend({
     this.offRouteCounter = 0;
     this.offRouteStartTimestamp = 0;
     this.routePointCounter = 0;
+    this._currentEvents = {};
+    this._events = {};
+    this._eventId = 0;
   },
 
   /**
-     *
-     *
-     * @param {Object} route
-     *   The calculated route to handle.
-     *
-     */
+   *
+   *
+   * @param {Object} route
+   *   The calculated route to handle.
+   *
+   */
   setRoute: function(route) {
     this.reset();
     this.route = route;
 
     return this;
   },
-
 
   reroute: function(options) {
     options || (options = {});
@@ -129,10 +135,9 @@ var Navigation = Class.extend({
     this.setRoute(response.route);
   },
 
-
   /**
-     * Starts the navigation.
-     */
+   * Starts the navigation.
+   */
   start: function() {
     // repeat last position
     this.getPositionOnRoute(ffwdme.geolocation.last);
@@ -146,12 +151,56 @@ var Navigation = Class.extend({
   },
 
   /**
-     */
+   * Stops the navigation
+   */
   stop: function() {
     ffwdme.off('geoposition:update', this.getPositionOnRoute);
     ffwdme.trigger('navigation:stop', {
       route: this.route
     });
+  },
+
+  addEvent: function(event) {
+      if (!event.hasOwnProperty('coords')) {
+        return;
+      }
+
+      event.coords = _.isArray(event.coords)?event.coords:[event.coords.lat,event.coords.lng];
+      event.radius = event.radius || 100; // in meters
+      var id = this._eventId + '';
+      this._eventId++;
+      this._events[id] = event;
+      return this._eventId;
+  },
+
+  removeEvent: function(eventId) {
+      delete this._events[eventId];
+  },
+
+  findEvents: function(pos) {
+    var newCurrentEvents = {};
+    for(var eventId in this._events) {
+      var event  = this._events[eventId];
+        if (this.distance(pos, event.coords) <= event.radius) {
+          newCurrentEvents[eventId] = event;
+        }
+    }
+    var newKeys = Object.keys(newCurrentEvents);
+    var oldKeys = Object.keys(this._currentEvents);
+    var oldEvents = _.difference(oldKeys, newKeys);
+    var newEvents = _.difference(newKeys, oldKeys);
+    if (oldEvents.length > 0) {
+      ffwdme.trigger('navigation:offevents', {
+        events: _.pick(this._currentEvents, oldEvents)
+      });
+    }
+    if (newEvents.length > 0) {
+      ffwdme.trigger('navigation:onevents', {
+        events: _.pick(newCurrentEvents, newEvents)
+      });
+    }
+    this._currentEvents = newCurrentEvents;
+    return this._currentEvents;
   },
 
   notFoundOnRoute: function(result) {
@@ -164,12 +213,16 @@ var Navigation = Class.extend({
 
     this.offRouteCounter++;
 
-    ffwdme.trigger('navigation:offroute', { navInfo: result });
+    ffwdme.trigger('navigation:offroute', {
+      route: this.route
+    });
   },
 
   getPositionOnRoute: function(position) {
-
-    var MAX_DISTANCE = 30;//Math.max(35, Math.min(pos.coords.accuracy.toFixed(1), 50));// OR 35?!
+    if (position === null) {
+      return;
+    }
+    var MAX_DISTANCE = 30; //Math.max(35, Math.min(pos.coords.accuracy.toFixed(1), 50));// OR 35?!
 
     var nearest;
     // try to find the current position on the route
@@ -179,7 +232,8 @@ var Navigation = Class.extend({
 
       var jumping = this.approachInSteps();
 
-      var jumpLen = jumping.length, currJump;
+      var jumpLen = jumping.length,
+        currJump;
       for (var i = 0; i < jumpLen; i++) {
         currJump = jumping[i];
         nearest = this.route.nearestTo(position.point, currJump.dIndex, currJump.pIndex, currJump.max);
@@ -189,11 +243,13 @@ var Navigation = Class.extend({
 
     this.routePointCounter++;
 
+
     var navInfo = new ffwdme.NavigationInfo({
       nearest: nearest,
       raw: position,
       navigation: this,
       route: this.route,
+      events:this.findEvents(position.point),
       onRoute: !!(nearest.point && nearest.distance < MAX_DISTANCE)
     });
 
@@ -203,35 +259,31 @@ var Navigation = Class.extend({
 
     this.offRouteCounter = 0;
 
-    return ffwdme.trigger('navigation:onroute', { navInfo: navInfo });
+    return ffwdme.trigger('navigation:onroute', {
+      navInfo: navInfo
+    });
   },
 
   approachInSteps: function() {
-    return [
-      {
-        dIndex: this._lastDrivingDirectionIndex,
-        pIndex: this._lastDirectionPathIndex,
-        max: 2
-      },
-      {
-        dIndex: Math.max(this._lastDrivingDirectionIndex - 2 ,0),
-        pIndex: 0,
-        max: 5
-      },
-      {
-        dIndex: Math.max(this._lastDrivingDirectionIndex - 4 ,0),
-        pIndex: 0,
-        max: 10
-      },
-      {
-        dIndex: 0,
-        pIndex: 0,
-        max: false
-      }
-    ];
+    return [{
+      dIndex: this._lastDrivingDirectionIndex,
+      pIndex: this._lastDirectionPathIndex,
+      max: 2
+    }, {
+      dIndex: Math.max(this._lastDrivingDirectionIndex - 2, 0),
+      pIndex: 0,
+      max: 5
+    }, {
+      dIndex: Math.max(this._lastDrivingDirectionIndex - 4, 0),
+      pIndex: 0,
+      max: 10
+    }, {
+      dIndex: 0,
+      pIndex: 0,
+      max: false
+    }];
   }
 
 }).implement(geoUtils);
-
 
 module.exports = Navigation;
