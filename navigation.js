@@ -139,13 +139,19 @@ var Navigation = Class.extend({
 
     ffwdme.on('geoposition:update', this.getPositionOnRoute);
     this.startTime = Date.now();
+    ffwdme.trigger('navigation:start', {
+      startTime: this.startTime,
+      route: this.route
+    });
   },
 
   /**
-     * Stops the navigation
      */
   stop: function() {
     ffwdme.off('geoposition:update', this.getPositionOnRoute);
+    ffwdme.trigger('navigation:stop', {
+      route: this.route
+    });
   },
 
   notFoundOnRoute: function(result) {
