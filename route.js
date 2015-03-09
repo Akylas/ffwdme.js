@@ -21,16 +21,17 @@ var Route = Class.extend({
   directions: null,
 
   parse: function(json) {
+    // sdebug(JSON.stringify(json));
+    _.assign(this, json);
     this.summary = json.summary;
     this.directions = json.directions;
-
-    for (var i = 0, len = this.directions.length; i < len; i++) {
-      var path = this.directions[i].path, newPath = [];
-      for (var j = 0, plen = path.length; j < plen; j++) {
-        newPath.push(new ffwdme.LatLng(path[j][0], path[j][1]));
-      }
-      this.directions[i].path = newPath;
-    }
+    // for (var i = 0, len = this.directions.length; i < len; i++) {
+    //   var path = this.directions[i].path, newPath = [];
+    //   for (var j = 0, plen = path.length; j < plen; j++) {
+    //     newPath.push(new ffwdme.LatLng(path[j][0], path[j][1]));
+    //   }
+    //   this.directions[i].path = newPath;
+    // }
     return this;
   },
 
@@ -141,7 +142,6 @@ var Route = Class.extend({
 
       array.push([lat * 1e-5, lng * 1e-5]);
     }
-
     return array;
   }
 });
