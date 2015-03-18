@@ -27,8 +27,9 @@ var Route = Class.extend({
     if (json.legs) {
       this.legs = json.legs;
       this.directions = _.reduce(this.legs, function(result, leg, legIndex) {
-        _.each(leg.directions, function(direction) {
+        _.each(leg.directions, function(direction, i) {
           direction.legIndex = legIndex;
+          direction.directionIndexInLeg = i;
         });
         result = result.concat(leg.directions);
         return result;
@@ -40,8 +41,9 @@ var Route = Class.extend({
       this.legs = [{
         directions:this.directions
       }];
-      _.each(this.directions, function(direction) {
+      _.each(this.directions, function(direction, i) {
         direction.legIndex = 0;
+        direction.directionIndexInLeg = i;
       });
       this.legsCount = 1;
       this.directionsCount = this.directions.length;
@@ -119,6 +121,7 @@ var Route = Class.extend({
         nearest.point = point;
         nearest.directionIndex = i;
         nearest.legIndex = direction.legIndex;
+        nearest.directionIndexInLeg = direction.directionIndexInLeg;
         nearest.prevPathIndex = j;
         nearest.nextPathIndex = j + 1;
       }
