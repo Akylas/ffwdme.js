@@ -12,7 +12,7 @@ var Route = Class.extend({
    * @constructs
    *
    */
-  constructor: function(){
+  constructor: function() {
 
   },
 
@@ -21,29 +21,45 @@ var Route = Class.extend({
   directions: null,
 
   parse: function(json) {
-    // sdebug(JSON.stringify(json));
     _.assign(this, json);
     this.summary = json.summary;
-    this.directions = json.directions;
-    // for (var i = 0, len = this.directions.length; i < len; i++) {
-    //   var path = this.directions[i].path, newPath = [];
-    //   for (var j = 0, plen = path.length; j < plen; j++) {
-    //     newPath.push(new ffwdme.LatLng(path[j][0], path[j][1]));
-    //   }
-    //   this.directions[i].path = newPath;
-    // }
+
+    if (json.legs) {
+      this.legs = json.legs;
+      this.directions = _.reduce(this.legs, function(result, leg, legIndex) {
+        _.each(leg.directions, function(direction) {
+          direction.legIndex = legIndex;
+        });
+        result = result.concat(leg.directions);
+        return result;
+      }, []);
+      this.legsCount = this.legs.length;
+      this.directionsCount = this.directions.length;
+    } else {
+      this.directions = json.directions;
+      this.legs = [{
+        directions:this.directions
+      }];
+      _.each(this.directions, function(direction) {
+        direction.legIndex = 0;
+      });
+      this.legsCount = 1;
+      this.directionsCount = this.directions.length;
+    }
     return this;
   },
 
   start: function() {
-    var firstDirection = this.directions[0];
-    var firstPosition  = firstDirection.path[0];
+    var firstLeg = this.legs[0];
+    var firstDirection = firstLeg[0];
+    var firstPosition = firstDirection.path[0];
     return firstPosition;
   },
 
   destination: function() {
-    var lastDirection = this.directions[this.directions.length - 1];
-    var lastPosition  = lastDirection.path[lastDirection.path.length - 1];
+    var lastLeg = this.legs[this.legs.length - 1];
+    var lastDirection = lastLeg.directions[this.directions.length - 1];
+    var lastPosition = lastDirection.path[lastDirection.path.length - 1];
     return lastPosition;
   },
 
@@ -69,18 +85,18 @@ var Route = Class.extend({
    *   distance (float): The distance to from the nearest point found to the captured position.
    *   point: (ffwdme.LatLng):The nearest point found on the route (keys: lat, lng).
    */
-  nearestTo: function(pos, directionIndex, pathIndex, maxIterations){
-
+  nearestTo: function(pos, directionIndex, pathIndex, maxIterations) {
     var nearest = {
       distance: 999999,
-      point:    null,
+      point: null,
       directionIndex: null,
+      legIndex: null,
       prevPathIndex: null,
       nextPathIndex: null
     };
 
     var geo = geoUtils;
-    var len = maxIterations ? Math.min(maxIterations, this.directions.length) : this.directions.length;
+    var len = maxIterations ? Math.min(maxIterations, this.directionsCount) : this.directionsCount;
 
     for (var i = directionIndex; i < len; i++) {
       var direction = this.directions[i];
@@ -100,8 +116,9 @@ var Route = Class.extend({
         if (nearest.distance < distance) continue;
 
         nearest.distance = distance;
-        nearest.point    = point;
+        nearest.point = point;
         nearest.directionIndex = i;
+        nearest.legIndex = direction.legIndex;
         nearest.prevPathIndex = j;
         nearest.nextPathIndex = j + 1;
       }

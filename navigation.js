@@ -40,9 +40,9 @@ var Navigation = Class.extend({
 
   _lastDrivingDirectionIndex: null,
 
-  _eventId:0,
-  _events:{},
-  _currentEvents:{},
+  _eventId: 0,
+  _events: {},
+  _currentEvents: {},
 
   startTime: null,
 
@@ -144,6 +144,7 @@ var Navigation = Class.extend({
 
     ffwdme.on('geoposition:update', this.getPositionOnRoute);
     this.startTime = Date.now();
+    this.currentLeg = 0;
     ffwdme.trigger('navigation:start', {
       startTime: this.startTime,
       route: this.route
@@ -155,35 +156,40 @@ var Navigation = Class.extend({
    */
   stop: function() {
     ffwdme.off('geoposition:update', this.getPositionOnRoute);
+    this.startTime = null;
     ffwdme.trigger('navigation:stop', {
       route: this.route
     });
   },
 
-  addEvent: function(event) {
-      if (!event.hasOwnProperty('coords')) {
-        return;
-      }
+  started: function() {
+    return this.startTime !== null;
+  },
 
-      event.coords = _.isArray(event.coords)?event.coords:[event.coords.lat,event.coords.lng];
-      event.radius = event.radius || 100; // in meters
-      var id = this._eventId + '';
-      this._eventId++;
-      this._events[id] = event;
-      return this._eventId;
+  addEvent: function(event) {
+    if (!event.hasOwnProperty('coords')) {
+      return;
+    }
+
+    event.coords = _.isArray(event.coords) ? event.coords : [event.coords.lat, event.coords.lng];
+    event.radius = event.radius || 100; // in meters
+    var id = this._eventId + '';
+    this._eventId++;
+    this._events[id] = event;
+    return this._eventId;
   },
 
   removeEvent: function(eventId) {
-      delete this._events[eventId];
+    delete this._events[eventId];
   },
 
   findEvents: function(pos) {
     var newCurrentEvents = {};
-    for(var eventId in this._events) {
-      var event  = this._events[eventId];
-        if (this.distance(pos, event.coords) <= event.radius) {
-          newCurrentEvents[eventId] = event;
-        }
+    for (var eventId in this._events) {
+      var event = this._events[eventId];
+      if (this.distance(pos, event.coords) <= event.radius) {
+        newCurrentEvents[eventId] = event;
+      }
     }
     var newKeys = Object.keys(newCurrentEvents);
     var oldKeys = Object.keys(this._currentEvents);
@@ -226,8 +232,11 @@ var Navigation = Class.extend({
 
     var nearest;
     // try to find the current position on the route
+
+    var onRoute = false;
     if (!this._lastDrivingDirectionIndex) {
       nearest = this.route.nearestTo(position.point, 0, 0);
+      onRoute = !!(nearest.point && nearest.distance < MAX_DISTANCE);
     } else {
 
       var jumping = this.approachInSteps();
@@ -237,26 +246,34 @@ var Navigation = Class.extend({
       for (var i = 0; i < jumpLen; i++) {
         currJump = jumping[i];
         nearest = this.route.nearestTo(position.point, currJump.dIndex, currJump.pIndex, currJump.max);
-        if (nearest.point && nearest.distance < MAX_DISTANCE) break;
+        onRoute = !!(nearest.point && nearest.distance < MAX_DISTANCE);
+        if (onRoute) break;
       }
     }
 
     this.routePointCounter++;
-
 
     var navInfo = new ffwdme.NavigationInfo({
       nearest: nearest,
       raw: position,
       navigation: this,
       route: this.route,
-      events:this.findEvents(position.point),
-      onRoute: !!(nearest.point && nearest.distance < MAX_DISTANCE)
+      onRoute: onRoute,
+      legIndex: this.currentLeg
     });
 
     if (!navInfo.onRoute) {
       return this.notFoundOnRoute(navInfo);
     }
 
+    if (navInfo.currentDirection.legIndex !== this.currentLeg) {
+      navInfo.legIndex = this.currentLeg = navInfo.currentDirection.legIndex;
+      ffwdme.trigger('navigation:legchanged', {
+        legIndex:this.currentLeg,
+        navInfo: navInfo,
+        route: this.route
+      });
+    }
     this.offRouteCounter = 0;
 
     return ffwdme.trigger('navigation:onroute', {
@@ -265,6 +282,7 @@ var Navigation = Class.extend({
   },
 
   approachInSteps: function() {
+    sdebug(this._lastDrivingDirectionIndex);
     return [{
       dIndex: this._lastDrivingDirectionIndex,
       pIndex: this._lastDirectionPathIndex,

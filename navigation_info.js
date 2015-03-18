@@ -25,6 +25,7 @@ var NavigationInfo = Class.extend({
     this.navigation = options.navigation;
     this.route = options.route;
 
+
     this.finalDirection = (this.nearest.directionIndex + 1 === this.route.directions.length);
 
     this.arrived = this.finalDirection && ffwdme.utils.Geo.distance(this.positionRaw, this.route.destination()) <= 35; // you arrived
@@ -32,6 +33,10 @@ var NavigationInfo = Class.extend({
     this.onRoute = options.onRoute;
 
     if (!this.onRoute) return;
+
+    //set events
+    this.events = this.navigation.findEvents(this.positionRaw);
+
     // Set directions
     this.currentDirection = this.route.directions[this.nearest.directionIndex];
     this.nextDirection = this.route.directions[this.nearest.directionIndex + 1];
