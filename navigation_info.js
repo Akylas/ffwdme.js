@@ -28,7 +28,7 @@ var NavigationInfo = Class.extend({
 
 
     this.finalDirection = (this.nearest.directionIndex + 1 === this.route.directions.length);
-    this.finalLegDirection = (this.nearest.directionIndexInLeg + 1 === this.routes.legs[this.nearest.legIndex].directions.length);
+    this.finalLegDirection = (this.nearest.directionIndexInLeg + 1 === this.route.legs[this.nearest.legIndex].directions.length);
 
     this.arrived = this.finalDirection && ffwdme.utils.Geo.distance(this.positionRaw, this.route.destination()) <= 35; // you arrived
 
