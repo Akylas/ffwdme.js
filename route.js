@@ -48,6 +48,8 @@ var Route = Class.extend({
       this.legsCount = 1;
       this.directionsCount = this.directions.length;
     }
+
+    this.events = json.events;
     return this;
   },
 
