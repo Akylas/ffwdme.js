@@ -99,6 +99,7 @@ var Google = Base.extend({
     var bounds = route.bounds;
 
     var routeStruct = {
+      directions: [],
       summary: {
         overview: route.summary,
         warnings: route.warnings,
@@ -109,29 +110,20 @@ var Google = Base.extend({
           ne: [bounds.northeast.lat, bounds.northeast.lng],
           sw: [bounds.southwest.lat, bounds.southwest.lng]
         },
-      },
-      legs: []
+      }
     };
     var distance = 0,
       duration = 0,
       leg, instruction, steps, nbLegs = route.legs.length;
     for (var i = 0; i < nbLegs; i++) {
       leg = route.legs[i];
-      var currentLeg = {
-        directions: [],
-        start: [leg.start_location.lat, leg.start_location.lng],
-        end: [leg.end_location.lat, leg.end_location.lng],
-        duration: leg.duration.value,
-        distance: leg.distance.value
-      };
-      routeStruct.legs.push(currentLeg);
       if (i == 0) {
-        routeStruct.summary.start = currentLeg.start;
+        routeStruct.summary.start = [leg.start_location.lat, leg.start_location.lng];
       } else if (i === nbLegs - 1) {
-        routeStruct.summary.end = currentLeg.end;
+        routeStruct.summary.end = [leg.end_location.lat, leg.end_location.lng];
       }
-      distance += currentLeg.distance;
-      duration += currentLeg.duration;
+      distance += leg.distance.value;
+      duration += leg.duration.value;
       steps = leg.steps;
       for (var j = 0; j < steps.length; j++) {
         instruction = steps[j];
@@ -170,13 +162,11 @@ var Google = Base.extend({
           d.street = matches[1];
           break;
         }
-        currentLeg.directions.push(d);
+        routeStruct.directions.push(d);
       }
     };
     routeStruct.summary.duration = duration;
     routeStruct.summary.distance = distance;
-
-    sdebug(JSON.stringify(routeStruct));
 
     this.route = new ffwdme.Route().parse(routeStruct);
 

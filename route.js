@@ -21,48 +21,45 @@ var Route = Class.extend({
   directions: null,
 
   parse: function(json) {
+    // sdebug(JSON.stringify(json));
     _.assign(this, json);
-    this.summary = json.summary;
-
-    if (json.legs) {
-      this.legs = json.legs;
-      this.directions = _.reduce(this.legs, function(result, leg, legIndex) {
-        _.each(leg.directions, function(direction, i) {
-          direction.legIndex = legIndex;
-          direction.directionIndexInLeg = i;
-        });
-        result = result.concat(leg.directions);
-        return result;
-      }, []);
-      this.legsCount = this.legs.length;
-      this.directionsCount = this.directions.length;
-    } else {
-      this.directions = json.directions;
-      this.legs = [{
-        directions:this.directions
-      }];
-      _.each(this.directions, function(direction, i) {
-        direction.legIndex = 0;
-        direction.directionIndexInLeg = i;
-      });
-      this.legsCount = 1;
-      this.directionsCount = this.directions.length;
+    this.summary = json.summary || {};
+    if (!this.summary.hasOwnProperty('distance')) {
+      this.summary.distance = this.distance;
     }
-
+    if (!this.summary.hasOwnProperty('duration')) {
+      this.summary.duration = this.duration;
+    }
+    this.directions = json.directions;
+    if (!this.directions) {
+      this.directions = [{
+        path: this.path,
+        duration:this.summary.duration,
+        distance: this.summary.distance
+      }]
+    }
+    if (!this.summary.boundingBox) {
+      this.summary.boundingBox = geoUtils.boundingBox(this.path);
+    }
+    // for (var i = 0, len = this.directions.length; i < len; i++) {
+    //   var path = this.directions[i].path, newPath = [];
+    //   for (var j = 0, plen = path.length; j < plen; j++) {
+    //     newPath.push(new ffwdme.LatLng(path[j][0], path[j][1]));
+    //   }
+    //   this.directions[i].path = newPath;
+    // }
     this.events = json.events;
     return this;
   },
 
   start: function() {
-    var firstLeg = this.legs[0];
-    var firstDirection = firstLeg[0];
+    var firstDirection = this.directions[0];
     var firstPosition = firstDirection.path[0];
     return firstPosition;
   },
 
   destination: function() {
-    var lastLeg = this.legs[this.legs.length - 1];
-    var lastDirection = lastLeg.directions[this.directions.length - 1];
+    var lastDirection = this.directions[this.directions.length - 1];
     var lastPosition = lastDirection.path[lastDirection.path.length - 1];
     return lastPosition;
   },
@@ -90,17 +87,17 @@ var Route = Class.extend({
    *   point: (ffwdme.LatLng):The nearest point found on the route (keys: lat, lng).
    */
   nearestTo: function(pos, directionIndex, pathIndex, maxIterations) {
+
     var nearest = {
       distance: 999999,
       point: null,
       directionIndex: null,
-      legIndex: null,
       prevPathIndex: null,
       nextPathIndex: null
     };
 
     var geo = geoUtils;
-    var len = maxIterations ? Math.min(maxIterations, this.directionsCount) : this.directionsCount;
+    var len = maxIterations ? Math.min(maxIterations, this.directions.length) : this.directions.length;
 
     for (var i = directionIndex; i < len; i++) {
       var direction = this.directions[i];
@@ -122,8 +119,6 @@ var Route = Class.extend({
         nearest.distance = distance;
         nearest.point = point;
         nearest.directionIndex = i;
-        nearest.legIndex = direction.legIndex;
-        nearest.directionIndexInLeg = direction.directionIndexInLeg;
         nearest.prevPathIndex = j;
         nearest.nextPathIndex = j + 1;
       }

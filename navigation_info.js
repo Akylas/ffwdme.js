@@ -18,32 +18,25 @@ var NavigationInfo = Class.extend({
    *
    */
   constructor: function(ffwdme, options) {
-    this.ffwdme = ffwdme;
     this.position = options.nearest.point;
     this.positionRaw = options.raw.point;
     this.nearest = options.nearest;
     this.raw = options.raw;
-    this.navigation = options.navigation;
+    // this.navigation = options.navigation;
     this.route = options.route;
 
-
     this.finalDirection = (this.nearest.directionIndex + 1 === this.route.directions.length);
-    this.finalLegDirection = (this.nearest.directionIndexInLeg + 1 === this.route.legs[this.nearest.legIndex].directions.length);
 
     this.arrived = this.finalDirection && ffwdme.utils.Geo.distance(this.positionRaw, this.route.destination()) <= 35; // you arrived
 
     this.onRoute = options.onRoute;
 
     if (!this.onRoute) return;
-
-    //set events
-    this.events = this.navigation.findEvents(this.positionRaw);
-
     // Set directions
     this.currentDirection = this.route.directions[this.nearest.directionIndex];
     this.nextDirection = this.route.directions[this.nearest.directionIndex + 1];
 
-    this.calculateDistances();
+    this.calculateDistances(ffwdme);
     this.calculateRatios();
     this.calculateTimes();
   },
@@ -52,9 +45,8 @@ var NavigationInfo = Class.extend({
     // The already completed distance of the direction
     var completedDistanceOfDirection = this.currentDirection.distance - this.distanceToNextDirection;
     var ratioCompletedDirection = completedDistanceOfDirection / this.currentDirection.distance;
-    var round = Math.round;
 
-    ratioCompletedDirection = round(ratioCompletedDirection * 100)/ 100;
+    ratioCompletedDirection = Math.round(ratioCompletedDirection * 100)/ 100;
 
     // TODO - This is a pretty dirty fix to prevent a negative ratio.
     if (ratioCompletedDirection < 0.01) ratioCompletedDirection = 0.01;
@@ -62,7 +54,7 @@ var NavigationInfo = Class.extend({
     this.ratioCompletedDirection = ratioCompletedDirection;
 
     var ratioCompletedRoute = (this.route.summary.distance - this.distanceToDestination) / this.route.summary.distance;
-    ratioCompletedRoute = round(ratioCompletedRoute * 100)/ 100;
+    ratioCompletedRoute = Math.round(ratioCompletedRoute * 100)/ 100;
 
     // TODO - This is a pretty dirty fix to prevent a negative ratio.
     if (ratioCompletedRoute < 0.01) ratioCompletedRoute = 0.01;
@@ -76,9 +68,9 @@ var NavigationInfo = Class.extend({
     this.timeToDestination = Math.round( (1 - this.ratioCompletedRoute) * this.route.summary.duration );
   },
 
-  calculateDistances: function() {
+  calculateDistances: function(ffwdme) {
 
-    var geo = this.ffwdme.utils.Geo;
+    var geo = ffwdme.utils.Geo;
     // practical tests have proven we should
     // substract 10m from the distances to
     // because of the fuzzy gps position
