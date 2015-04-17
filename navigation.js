@@ -12,7 +12,8 @@ var Navigation = Class.extend({
    * @augments ffwdme.Class
    * @constructs
    */
-  constructor: function(options) {
+  constructor: function(ffwdme, options) {
+    this.ffwdme = ffwdme;
     this.bindAll(this, 'getPositionOnRoute', 'rerouteCallback');
   },
 
@@ -121,7 +122,7 @@ var Navigation = Class.extend({
       destLat = lastDirection.path ? lastDirection.path[lastDirection.path.length - 1][0] : lastDirection.start[0],
       destLng = lastDirection.path ? lastDirection.path[lastDirection.path.length - 1][1] : lastDirection.start[1];
 
-    ffwdme.on('reroutecalculation:success', this.rerouteCallback);
+    this.ffwdme.on('reroutecalculation:success', this.rerouteCallback);
 
     options.dest = [destLat, destLng];
     options.rerouting = true;
@@ -131,7 +132,7 @@ var Navigation = Class.extend({
   },
 
   rerouteCallback: function(response) {
-    ffwdme.off('reroutecalculation:success', this.rerouteCallback);
+    this.ffwdme.off('reroutecalculation:success', this.rerouteCallback);
     this.setRoute(response.route);
   },
 
@@ -140,12 +141,12 @@ var Navigation = Class.extend({
    */
   start: function() {
     // repeat last position
-    this.getPositionOnRoute(ffwdme.geolocation.last);
+    this.getPositionOnRoute(this.ffwdme.geolocation.last);
 
-    ffwdme.on('geoposition:update', this.getPositionOnRoute);
+    this.ffwdme.on('geoposition:update', this.getPositionOnRoute);
     this.startTime = Date.now();
     this.currentLeg = 0;
-    ffwdme.trigger('navigation:start', {
+    this.ffwdme.trigger('navigation:start', {
       startTime: this.startTime,
       route: this.route
     });
@@ -155,9 +156,9 @@ var Navigation = Class.extend({
    * Stops the navigation
    */
   stop: function() {
-    ffwdme.off('geoposition:update', this.getPositionOnRoute);
+    this.ffwdme.off('geoposition:update', this.getPositionOnRoute);
     this.startTime = null;
-    ffwdme.trigger('navigation:stop', {
+    this.ffwdme.trigger('navigation:stop', {
       route: this.route
     });
   },
@@ -196,12 +197,12 @@ var Navigation = Class.extend({
     var oldEvents = _.difference(oldKeys, newKeys);
     var newEvents = _.difference(newKeys, oldKeys);
     if (oldEvents.length > 0) {
-      ffwdme.trigger('navigation:offevents', {
+      this.ffwdme.trigger('navigation:offevents', {
         events: _.pick(this._currentEvents, oldEvents)
       });
     }
     if (newEvents.length > 0) {
-      ffwdme.trigger('navigation:onevents', {
+      this.ffwdme.trigger('navigation:onevents', {
         events: _.pick(newCurrentEvents, newEvents)
       });
     }
@@ -219,7 +220,7 @@ var Navigation = Class.extend({
 
     this.offRouteCounter++;
 
-    ffwdme.trigger('navigation:offroute', {
+    this.ffwdme.trigger('navigation:offroute', {
       route: this.route
     });
   },
@@ -253,7 +254,7 @@ var Navigation = Class.extend({
 
     this.routePointCounter++;
 
-    var navInfo = new ffwdme.NavigationInfo({
+    var navInfo = new this.ffwdme.NavigationInfo(this.ffwdme, {
       nearest: nearest,
       raw: position,
       navigation: this,
@@ -268,7 +269,7 @@ var Navigation = Class.extend({
 
     if (navInfo.currentDirection.legIndex !== this.currentLeg) {
       navInfo.legIndex = this.currentLeg = navInfo.currentDirection.legIndex;
-      ffwdme.trigger('navigation:legchanged', {
+      this.ffwdme.trigger('navigation:legchanged', {
         legIndex:this.currentLeg,
         navInfo: navInfo,
         route: this.route
@@ -276,7 +277,7 @@ var Navigation = Class.extend({
     }
     this.offRouteCounter = 0;
 
-    return ffwdme.trigger('navigation:onroute', {
+    return this.ffwdme.trigger('navigation:onroute', {
       navInfo: navInfo
     });
   },
