@@ -48,7 +48,7 @@ var UtilsGeo = require('./utils/geo');
 
       options.geoProvider || (options.geoProvider = window.navigator.geolocation);
 
-      this.geolocation = new ffwdme.Geolocation(options.geoProvider);
+      this.geolocation = new ffwdme.Geolocation(ffwdme, options.geoProvider);
       // start watching the geoposition
       if (!options.ingoreGeolocation) {
         this.geolocation.watchPosition({
@@ -59,10 +59,12 @@ var UtilsGeo = require('./utils/geo');
       }
 
       if (options.routing && ffwdme.routing[options.routing]) {
-        this.routingService = ffwdme.routing[options.routing];
+        var routingId = options.routing.toLowerCase();
+        ffwdme.routing[routingId] = ffwdme.routing[routingId] || require('./routing/' +routingId);
+        this.routingService = ffwdme.routing[routingId];
       }
 
-      this.navigation = new ffwdme.Navigation();
+      this.navigation = new ffwdme.Navigation(ffwdme);
     },
 
     /**
@@ -225,8 +227,19 @@ var UtilsGeo = require('./utils/geo');
       return 'ffwdme.js v' + this.VERSION;
     }
   };
-
-  // attach ffwdme to the global namespace
-  global.ffwdme = ffwdme;
+  // Node: Export function
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = ffwdme;
+  }
+  // AMD/requirejs: Define the module
+  else if (typeof define === 'function' && define.amd) {
+    define(function() {
+      return ffwdme;
+    });
+  }
+  // Browser: Expose to window
+  else {
+    global.ffwdme = ffwdme;
+  }
 
 })(typeof window !== 'undefined' ? window : this);

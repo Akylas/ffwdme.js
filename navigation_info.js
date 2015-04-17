@@ -17,7 +17,8 @@ var NavigationInfo = Class.extend({
    * @constructs
    *
    */
-  constructor: function(options) {
+  constructor: function(ffwdme, options) {
+    this.ffwdme = ffwdme;
     this.position = options.nearest.point;
     this.positionRaw = options.raw.point;
     this.nearest = options.nearest;
@@ -77,7 +78,7 @@ var NavigationInfo = Class.extend({
 
   calculateDistances: function() {
 
-    var geo = ffwdme.utils.Geo;
+    var geo = this.ffwdme.utils.Geo;
     // practical tests have proven we should
     // substract 10m from the distances to
     // because of the fuzzy gps position

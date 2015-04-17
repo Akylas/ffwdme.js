@@ -18,7 +18,8 @@ var Geolocation = Class.extend({
  * @constructs
  *
  */
-  constructor: function(geoProvider){
+  constructor: function(ffwdme, geoProvider){
+    this.ffwdme = ffwdme;
     this.geoProvider = geoProvider;
     this.bindAll(this, 'positionUpdate', 'positionError');
   },
@@ -100,7 +101,7 @@ var Geolocation = Class.extend({
 
     this.options = options;
     this.watching = true;
-    ffwdme.trigger('geoposition:init');
+    this.ffwdme.trigger('geoposition:init');
   },
 
   clearWatch: function(){
@@ -124,8 +125,8 @@ var Geolocation = Class.extend({
     if (!this.last) first = true;
     this.last = data;
 
-    if (first) ffwdme.trigger('geoposition:ready', data);
-    ffwdme.trigger('geoposition:update', data);
+    if (first) this.ffwdme.trigger('geoposition:ready', data);
+    this.ffwdme.trigger('geoposition:update', data);
   },
 
   /**
@@ -136,7 +137,7 @@ var Geolocation = Class.extend({
    *   The error object recieved by the geo location interface.
    */
   positionError: function(error) {
-    ffwdme.trigger('geoposition:error', { error: error });
+    this.ffwdme.trigger('geoposition:error', { error: error });
   }
 });
 
