@@ -20,7 +20,7 @@ var Google = Base.extend({
     this.base(options);
     this.bindAll(this, 'parse', 'error');
 
-    this.apiKey = ffwdme.options.google.apiKey;
+    this.queryParams.apiKey = ffwdme.options.google.apiKey;
 
     if (options.anchorPoint) {
       this.anchorPoint = options.anchorPoint;
@@ -35,25 +35,16 @@ var Google = Base.extend({
    * @type String
    */
   BASE_URL: 'https://maps.googleapis.com/maps/api/directions/json',
-
-  // set via constructor
-  apiKey: null,
-
-  mode: 'driving',
-
-  avoid: null,
-
-  lang: 'fr',
-
-  region: 'fr',
-
-  route: null,
-
-  anchorPoint: null,
-
   direction: null,
+  anchorPoint: null,
+  route: null,
+  queryParams: {
+    mode: 'driving',
+    lang: 'fr',
+    region: 'fr',
+    alternatives: false
+  },
 
-  alternatives: false,
   streetsRegex: {
     'fr': /(?:(?:sur|rejoindre) <b>)(.*?)(?:<\/b>)/gi,
     'en': /(?:(?:on |near |onto |at |Head) <b>)(.*?)(?:<\/b>)/gi
@@ -62,18 +53,15 @@ var Google = Base.extend({
     'fr': /prendre la <b>([0-9])(?:.*?)<\/b> sortie/i,
     'en': /take the <b>([0-9])(?:.*?)<\/b> exit/i
   },
-  instructionRegex:/(<div(?:.*?)>(.*?)<\/div>)/gi,
-
+  instructionRegex: /(<div(?:.*?)>(.*?)<\/div>)/gi,
 
   fetch: function(_params) {
 
-
-    _.assign(this, params);
-    var params = _.assign({
-      key: this.apiKey,
+    _.assign(this.queryParams, _params);
+    var params = _.assign(queryParams, {
       origin: _.isString(this.start) ? this.start : this.start.join(','),
-      destination: _.isString(this.dest) ? this.dest: this.dest.join(',')
-    }, _params);
+      destination: _.isString(this.dest) ? this.dest : this.dest.join(',')
+    });
 
     sdebug(params);
 
@@ -122,7 +110,7 @@ var Google = Base.extend({
           sw: [bounds.southwest.lat, bounds.southwest.lng]
         },
       },
-      legs:[]
+      legs: []
     };
     var distance = 0,
       duration = 0,
@@ -130,11 +118,11 @@ var Google = Base.extend({
     for (var i = 0; i < nbLegs; i++) {
       leg = route.legs[i];
       var currentLeg = {
-        directions:[],
-        start:[leg.start_location.lat, leg.start_location.lng],
-        end:[leg.end_location.lat, leg.end_location.lng],
-        duration:leg.duration.value,
-        distance:leg.distance.value
+        directions: [],
+        start: [leg.start_location.lat, leg.start_location.lng],
+        end: [leg.end_location.lat, leg.end_location.lng],
+        duration: leg.duration.value,
+        distance: leg.distance.value
       };
       routeStruct.legs.push(currentLeg);
       if (i == 0) {

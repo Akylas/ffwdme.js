@@ -3,10 +3,10 @@ var Geolocation = require('./geolocation');
 var Navigation = require('./navigation');
 var Route = require('./route');
 var NavigationInfo = require('./navigation_info');
-var RoutingBase = require('./routing/base');
-var RoutingGoogle = require('./routing/google');
-var RoutingMapQuest = require('./routing/mapquest');
-var RoutingGraphHopper= require('./routing/graph_hopper');
+// var RoutingBase = require('./routing/base');
+// var RoutingGoogle = require('./routing/google');
+// var RoutingMapQuest = require('./routing/mapquest');
+// var RoutingGraphHopper= require('./routing/graphhopper');
 var UtilsGeo = require('./utils/geo');
 
 (function(global, undefined) {
@@ -23,10 +23,10 @@ var UtilsGeo = require('./utils/geo');
 
 
     routing: {
-      Base: RoutingBase,
-      Google: RoutingGoogle,
-      GraphHopper: RoutingGraphHopper,
-      MapQuest: RoutingMapQuest
+      // Base: RoutingBase,
+      // Google: RoutingGoogle,
+      // GraphHopper: RoutingGraphHopper,
+      // MapQuest: RoutingMapQuest
     },
 
     utils: {
