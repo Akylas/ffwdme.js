@@ -27,7 +27,6 @@ var NavigationInfo = Class.extend({
 
     this.finalDirection = (this.nearest.directionIndex + 1 === this.route.directions.length);
 
-    this.arrived = this.finalDirection && ffwdme.utils.Geo.distance(this.positionRaw, this.route.destination()) <= 35; // you arrived
 
     this.onRoute = options.onRoute;
 
@@ -39,6 +38,7 @@ var NavigationInfo = Class.extend({
     this.calculateDistances(ffwdme);
     this.calculateRatios();
     this.calculateTimes();
+    this.arrived = this.finalDirection && this.ratioCompletedRoute > 0.97 && ffwdme.utils.Geo.distance(this.positionRaw, this.route.destination()) <= 20; // you arrived
   },
 
   calculateRatios: function() {

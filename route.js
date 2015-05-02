@@ -34,7 +34,7 @@ var Route = Class.extend({
     if (!this.directions) {
       this.directions = [{
         path: this.path,
-        duration:this.summary.duration,
+        duration: this.summary.duration,
         distance: this.summary.distance
       }]
     }
@@ -89,38 +89,40 @@ var Route = Class.extend({
   nearestTo: function(pos, directionIndex, pathIndex, maxIterations) {
 
     var nearest = {
-      distance: 999999,
-      point: null,
-      directionIndex: null,
-      prevPathIndex: null,
-      nextPathIndex: null
-    };
-
-    var geo = geoUtils;
-    var len = maxIterations ? Math.min(maxIterations, this.directions.length) : this.directions.length;
+        distance: 999999,
+        point: null,
+        directionIndex: null,
+        prevPathIndex: null,
+        nextPathIndex: null
+      },
+      geo = geoUtils,
+      direction, pathLen, pathStart, point, j, path, distance,
+      len = maxIterations ? Math.min(maxIterations, this.directions.length) : this.directions.length;
 
     for (var i = directionIndex; i < len; i++) {
-      var direction = this.directions[i];
-      var pathLen = direction.path.length - 1;
-      var pathStart = (i === directionIndex) ? pathIndex : 0;
+      direction = this.directions[i];
+      path = direction.path;
+      pathStart = (i === directionIndex) ? pathIndex : 0;
+      pathLen = maxIterations ? Math.min(pathStart + maxIterations * 10, path.length - 1) : path.length -
+        1;
 
-      for (var j = pathStart; j < pathLen; j++) {
-        var point = geo.closestOnLine(
-          direction.path[j],
-          direction.path[j + 1],
+      for (j = pathStart; j < pathLen; j++) {
+        point = geo.closestOnLine(
+          path[j],
+          path[j + 1],
           pos
         );
 
-        var distance = geo.distance(pos, point);
+        distance = geo.distance(pos, point);
 
         // not closer than before
-        if (nearest.distance < distance) continue;
-
+        if (nearest.distance <= distance) continue;
         nearest.distance = distance;
         nearest.point = point;
         nearest.directionIndex = i;
         nearest.prevPathIndex = j;
         nearest.nextPathIndex = j + 1;
+        if (distance === 0 ) break;
       }
     }
     return nearest;
